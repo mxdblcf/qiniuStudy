@@ -1,0 +1,24 @@
+### GET request with parameter
+GET http://localhost:8080/ping
+Accept: application/json
+
+
+###post请求测试上传
+### Send a form with the text and file fields
+POST http://localhost:8080/upload
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="mmm.jpg"
+Content-Type: application/json
+
+< "C:\Users\mxdbl\Desktop\mmm.jpg"
+
+###
+POST http://localhost:8080/ping1
+Content-Type: application/json
+
+{
+  "id": 999,
+  "value": "content"
+}
