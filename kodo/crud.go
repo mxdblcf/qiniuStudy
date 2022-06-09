@@ -2,12 +2,14 @@ package kodo
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/qiniu/go-sdk/v7/auth/qbox"
 	"github.com/qiniu/go-sdk/v7/storage"
 	"mime/multipart"
 	"net/http"
+	"strings"
 )
 
 var accessKey = "CZ7UFxAAFj_woqg_4igpwxDYiyBINyUANXJQi-VN"
@@ -190,4 +192,66 @@ func FetchNet(buc, url string) {
 	} else {
 		fmt.Println(fetch.String())
 	}
+}
+
+//持久化数据处理（比如视频转码）
+func Operation(buc string) {
+	var pipeline = ""
+	mac := qbox.NewMac(accessKey, secretKey)
+	config := storage.Config{UseHTTPS: true}
+	operationManager := storage.NewOperationManager(mac, &config)
+
+	key := "1812.mp4"
+	saveBucket := buc
+	// 处理指令集合(这里面主要是用了dora的一些规则)
+	fopAvthumb := fmt.Sprintf("avthumb/mp4/s/480x320/vb/500k|saveas/%s",
+		storage.EncodedEntry(saveBucket, "pfop_test_qiniu.mp4"))
+	fopVframe := fmt.Sprintf("vframe/jpg/offset/10|saveas/%s",
+		storage.EncodedEntry(saveBucket, "pfop_test_qiniu.jpg"))
+	fopVsample := fmt.Sprintf("vsample/jpg/interval/20/pattern/%s",
+		base64.URLEncoding.EncodeToString([]byte("pfop_test_$(count).jpg")))
+	fopBatch := []string{fopAvthumb, fopVframe, fopVsample}
+	fops := strings.Join(fopBatch, ";")
+	// 强制重新执行数据处理任务
+	force := true
+	// 数据处理指令全部完成之后，通知该地址
+	notifyURL := "http://api.example.com/pfop/callback"
+	// 数据处理的私有队列，必须指定以保障处理速度
+	persistentId, err := operationManager.Pfop(bucket, key, fops, pipeline, notifyURL, force)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(persistentId)
+}
+
+//图片处理
+func images(buc string) {
+	var pipeline = ""
+	mac := qbox.NewMac(accessKey, secretKey)
+	config := storage.Config{UseHTTPS: true}
+	operationManager := storage.NewOperationManager(mac, &config)
+
+	key := "1812.mp4"
+	saveBucket := buc
+	// 处理指令集合(这里面主要是用了dora的一些规则)
+	fopAvthumb := fmt.Sprintf("avthumb/mp4/s/480x320/vb/500k|saveas/%s",
+		storage.EncodedEntry(saveBucket, "pfop_test_qiniu.mp4"))
+	fopVframe := fmt.Sprintf("vframe/jpg/offset/10|saveas/%s",
+		storage.EncodedEntry(saveBucket, "pfop_test_qiniu.jpg"))
+	fopVsample := fmt.Sprintf("vsample/jpg/interval/20/pattern/%s",
+		base64.URLEncoding.EncodeToString([]byte("pfop_test_$(count).jpg")))
+	fopBatch := []string{fopAvthumb, fopVframe, fopVsample}
+	fops := strings.Join(fopBatch, ";")
+	// 强制重新执行数据处理任务
+	force := true
+	// 数据处理指令全部完成之后，通知该地址
+	notifyURL := "http://api.example.com/pfop/callback"
+	// 数据处理的私有队列，必须指定以保障处理速度
+	persistentId, err := operationManager.Pfop(bucket, key, fops, pipeline, notifyURL, force)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(persistentId)
 }

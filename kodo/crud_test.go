@@ -29,3 +29,7 @@ func TestFetchNet(t *testing.T) {
 	resURL := "http://devtools.qiniu.com/qiniu.png"
 	FetchNet(bucket1, resURL)
 }
+
+func TestOperation(t *testing.T) {
+	Operation(bucket1)
+}
